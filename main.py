@@ -1,6 +1,9 @@
+from email.mime.text import MIMEText
 import pandas as pd
 import smtplib
+from mail import yahoo_address, yahoo_password, my_email
 import random
+import os
 
 ##################### Extra Hard Starting Project ######################
 
@@ -11,44 +14,52 @@ data = pd.read_csv('birthdays.csv')
 print(data)
 print("------------------")
 names = data['name']
-names_list = names.to_list
+names_list = names.tolist()
 
 NAME = "[NAME]"
-# 3. If step 2 is true, pick a random letter from letter templates and replace the [NAME] with the person's actual name from birthdays.csv
 
+# 3. Randomly select one of the three letter templates
+letter_files = ["letter_1.txt", "letter_2.txt", "letter_3.txt"]
+chosen_letter = random.choice(letter_files)
 
-# 4. Send the letter generated in step 3 to that person's email address.
+# Create the correct file path
+letter_path = os.path.join("letter_templates", chosen_letter)
 
-# creating a variable and storing the text
-# that we want to search
-search_text = NAME
+# Read the chosen letter
+with open(letter_path, 'r') as file:
+    data = file.read()
+    # Replace [NAME] with the actual name
+    data = data.replace(NAME, str(names_list[0]))
 
-# creating a variable and storing the text
-# that we want to add
-replace_text = "replaced"
+# Write back the personalized letter
+with open(letter_path, 'w') as file:
+    file.write(data)
 
-# Opening our text file in read only
-# mode using the open() function
-with open(r'letter_1.txt', 'r') as file:
-
-	# Reading the content of the file
-	# using the read() function and storing
-	# them in a new variable
-	data = file.read()
-
-	# Searching and replacing the text
-	data = data.replace(search_text, replace_text)
-
-# Opening our text file in write only
-# mode to write the replaced content
-with open(r'letter_1.txt', 'w') as file:
-
-	# Writing the replaced data in our
-	# text file
-	file.write(data)
-
-# Printing Text replaced
+print(f"Using template: {chosen_letter}")
 print("Text replaced")
 
+# Read the final letter for email content
+with open(letter_path, 'r') as file:
+    mail_content = file.read()
 
+port = 587
+smtp_server = "smtp.mail.yahoo.com"
 
+sender_email = yahoo_address
+sender_password = yahoo_password
+
+receiver_email = my_email
+
+msg = MIMEText(mail_content, "plain")
+msg["Subject"] = "Happy Birthday!"
+msg["From"] = sender_email
+msg["To"] = receiver_email
+
+with smtplib.SMTP(smtp_server, port) as server:
+    server.starttls()  # Secure the connection
+    server.login(sender_email, sender_password)
+    server.sendmail(sender_email, receiver_email, msg.as_string())
+
+print('Sent')
+
+# Angela建議使用Dictionary comprehension。
